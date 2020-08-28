@@ -1,4 +1,3 @@
-import DBReader.DBReader;
 import LogReader.LogReader;
 import MQTTClient.MQTTClient;
 
@@ -58,18 +57,15 @@ public class Main {
       System.out.println("Starting...");
       System.out.println("interval : " + interval);
 
-
-
-      LogReader logReader = new LogReader(interval);
-      Thread t = new Thread(logReader);
+      MQTTClient mqttClient = new MQTTClient(interval);
+      Thread t = new Thread(mqttClient);
       t.start();
 
-      //24시간 주기로 실시간 테이블을 비우고 데이터셋을 가공하여 통계 테이블로 옮김 
-      DBReader dbReader = new DBReader();
-      Thread t2 = new Thread(dbReader);
+      LogReader logReader = new LogReader(interval, 100);
+      Thread t2 = new Thread(logReader);
       t2.start();
       
-      MQTTClient mqttClient = new MQTTClient("192.168.0.36", "1883");
+      
       
    }
 
