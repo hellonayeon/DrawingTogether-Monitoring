@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-/*topic과 관련된 정보를 저장하는 클래스*/ 
+/*토픽과 관련된 정보를 저장하는 클래스*/ 
 public class Topic {
    private String name; //topic 이름을 저장하는 변수 
    private int participants; //topic에 참여한 인원을 저장하는 변수
@@ -53,6 +53,10 @@ public class Topic {
    public void increaseParticipants() {
       participants++;
    }
+   
+   public void decreaseParticipants() {
+	   participants--;
+   }
 
    public void increaseMsgPublishCount() {
 	   msgPublishCount++;
@@ -68,5 +72,12 @@ public class Topic {
 
       this.startDate = sdf.format(d);
    }
+
+	@Override
+	public String toString() {
+		return "Topic [name=" + name + ", participants=" + participants + ", msgPublishCount=" + msgPublishCount
+				+ ", accumulatedMsgSize=" + accumulatedMsgSize + ", startDate=" + startDate + "]";
+	}
+   
 
 }

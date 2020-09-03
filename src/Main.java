@@ -1,5 +1,5 @@
+import ComponentReceiver.ComponentReceiver;
 import LogReader.LogReader;
-import MQTTClient.MQTTClient;
 
 public class Main {
    
@@ -57,7 +57,7 @@ public class Main {
       System.out.println("Starting...");
       System.out.println("interval : " + interval);
 
-      MQTTClient mqttClient = new MQTTClient(interval);
+      ComponentReceiver mqttClient = new ComponentReceiver(interval);
       Thread t = new Thread(mqttClient);
       t.start();
 

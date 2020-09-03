@@ -1,6 +1,6 @@
 package LogReader;
 
-/*mqtt broker에 연결된 client의 id와 플랫폼을 저장하는 클래스*/  
+/* MQTT 브로커에 연결된 client의 id와 플랫폼을 저장하는 클래스*/  
 public class Client {
    private String name; //client name를 저장하는 변수 
    private int msgPublishCount; // client가 메시지를 전송한 횟수를 저장하는 변수
@@ -48,6 +48,13 @@ public class Client {
    public String getTopic() {
 	   return topic;
    }
+
+	@Override
+	public String toString() {
+		return "Client [name=" + name + ", msgPublishCount=" + msgPublishCount + ", accumulatedMsgSize="
+				+ accumulatedMsgSize + ", platform=" + platform + ", topic=" + topic + "]";
+	}
+   
    
 
 }

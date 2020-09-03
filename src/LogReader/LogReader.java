@@ -19,18 +19,21 @@ import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-/*mqtt broker 로그의 정보를 읽어와 트래픽 데이터를 수집하여 db에 저장하는 클래스 */
+import ComponentReceiver.ComponentReceiver;
+
+/* MQTT 브로커의 로그의 정보를 읽어와 트래픽 데이터를 수집하여 DB에 저장하는 클래스 */
 public class LogReader implements Runnable {
 
 	private int interval; // 초 간격으로 DB 업데이트
 	private int numberOfRecords; // 실시간 테이블 최대 레코드 개수
 
-	// client id 가 key, client가 value인 Map
+	/* [key] client id, [value] Client */
 	private ConcurrentHashMap<String, Client> clientMap = new ConcurrentHashMap<>();
 
-	// topic name이 key, topic이 value인 map
+	/* [key] topic name, [value] Topic */
 	private ConcurrentHashMap<String, Topic> topicMap = new ConcurrentHashMap<>();
 
+	/* 메시지를 전송하는 참가자 리스트 */
 	private Vector<String> senderList = new Vector<String>();
 	
 	private String driver;
@@ -153,7 +156,7 @@ public class LogReader implements Runnable {
 		}
 	}
 
-	// topic table을 업데이트하는 함수
+	/* topic table 테이블을 업데이트하는 함수 */
 	public void updateTopicTable() {
 
 		Connection conn = null;
@@ -192,7 +195,7 @@ public class LogReader implements Runnable {
 		}
 	}
 
-	// realtime table을 업데이트하는 함수
+	/* realtime table을 업데이트하는 함수 */
 	public void updateRealtimeTable() {
 
 		int numberOfCurrentConnections = 0; // 현재 연결된 클라이언트 수를 저장하는 변수
@@ -271,7 +274,7 @@ public class LogReader implements Runnable {
 		}
 	}
 
-	/* topic 테이블 레코드 삭제 */
+	/* topic table 레코드 삭제 */
 	public void deleteFromTopicTable(String topic) {
 		Connection conn = null;
 		PreparedStatement pstmt = null;
@@ -288,7 +291,37 @@ public class LogReader implements Runnable {
 			pstmt.executeUpdate();
 
 		} catch (SQLException e) {
-			System.out.println("sql delete query error(client id : " + topic);
+			System.out.println("sql delete query error(topic : " + topic);
+			e.printStackTrace();
+		} catch (ClassNotFoundException e1) {
+			System.out.println("driver error");
+		} finally {
+			if (pstmt != null) try { pstmt.close(); } catch (SQLException e) { e.printStackTrace(); }
+			if (conn != null) try { conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+		}
+	}
+	
+	/* client table 레코드 삭제 */
+	public void deleteFromClientTable(String name, String topic) {
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+
+		try {
+			Class.forName(driver);
+			conn = DriverManager.getConnection(url, user, pw);
+
+			System.out.println("name = " + name + ", topic = " + topic);
+			
+			// 연결 해제 된 클라이언트 정보를 client 테이블에서 삭제
+			pstmt = conn.prepareStatement("DELETE FROM client where name=? and topic=?");
+
+			pstmt.setString(1, name);
+			pstmt.setString(2, topic);
+
+			pstmt.executeUpdate();
+
+		} catch (SQLException e) {
+			System.out.println("sql delete query error(client name : " + name + "client topic : " + topic + ")");
 			e.printStackTrace();
 		} catch (ClassNotFoundException e1) {
 			System.out.println("driver error");
@@ -298,7 +331,7 @@ public class LogReader implements Runnable {
 		}
 	}
 
-	// mqtt broker log를 읽고 데이터를 파싱하는 함수
+	/* MQTT 브로커 로그를 읽고 데이터를 파싱하는 함수 */
 	public void read() {
 		InputStreamReader inputStreamReader = new InputStreamReader(System.in);
 		BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -316,37 +349,40 @@ public class LogReader implements Runnable {
 				inputStr = null;
 				if ((inputStr = bufferedReader.readLine()) != null) {
 
-					if (inputStr.contains(MessageType.CONNECT)) {// connect 시 client 객체 생성하여 clientMap과 clientList에 추가
-						System.out.println("connection");
-
+					if (inputStr.contains(MessageType.CONNECT)) {// connect 시 client 객체 생성하여 clientMap에 추가
 						words = inputStr.split(" ");
 						clientId = words[4];
 
 						// clientId = "*name_topic_platform"
 						if (clientId.contains("*")) {
 							if (!clientMap.containsKey(clientId)) {
-								System.out.println("add client");
 								clientInfo = clientId.substring(1).split("_");
-								System.out.println(clientInfo);
 
 								Client c = new Client(clientInfo[0], clientInfo[1], clientInfo[2]);
 								clientMap.put(clientId, c);
 							}
 						}
 
-					} else if (inputStr.contains(MessageType.DISCONNECT)) {// disconnect 시 clientList에서 삭제
+					} else if (inputStr.contains(MessageType.DISCONNECT)) {// disconnect 시 clientMap에서 삭제
 						words = inputStr.split(" ");
 						clientId = words[4];
 
-						if (clientMap.containsKey(clientId))
+						if (clientMap.containsKey(clientId)) {
+							topicMap.get(clientMap.get(clientId).getTopic()).decreaseParticipants();
+							deleteFromClientTable(clientMap.get(clientId).getClientName(), clientMap.get(clientId).getTopic());
 							clientMap.remove(clientId);
+						}
 
-					} else if (inputStr.contains(MessageType.SOCKET_ERROR)) {// socket error 발생 시 clientList에서 삭제
+					} else if (inputStr.contains(MessageType.SOCKET_ERROR)) {// socket error 발생 시 clientMap에서 삭제
 						words = inputStr.split(" ");
 						clientId = words[5].replace(",", "");
 
-						if (clientMap.containsKey(clientId))
+						if (clientMap.containsKey(clientId)) {
+							topicMap.get(clientMap.get(clientId).getTopic()).decreaseParticipants();
+							deleteFromClientTable(clientMap.get(clientId).getClientName(), clientMap.get(clientId).getTopic());
 							clientMap.remove(clientId);
+						}
+							
 
 					} else if (inputStr.contains(MessageType.UNSUBSCRIBE)) {
 
@@ -359,8 +395,7 @@ public class LogReader implements Runnable {
 
 							if (topic.contains("_join")) {
 								String pre = topic.replace("_join", "");
-								if (topicMap.containsKey(pre)) { // topicMap에 이미 존재하는 토픽이면 참가자만 증가시킴 // TODO: 이미 있는
-																	// 사용자인지 확인이 필요?
+								if (topicMap.containsKey(pre)) { // topicMap에 이미 존재하는 토픽이면 참가자만 증가시킴 // TODO: 이미 있는 사용자인지 확인이 필요?
 									topicMap.get(pre).increaseParticipants();
 								} else { // 새로운 topic일 경우 저장
 									topicMap.put(pre, new Topic(pre));
@@ -386,10 +421,10 @@ public class LogReader implements Runnable {
 						messageSize = Integer.parseInt(words[11].replace("(", ""));
 
 						if (topic.contains("_data")) {
-							String pre = topic.replace("_data", "");
-							if (topicMap.containsKey(pre)) {
-								topicMap.get(pre).increaseAccumulatedMsgSize(messageSize);
-								topicMap.get(pre).increaseMsgPublishCount();
+							String t = topic.replace("_data", "");
+							if (topicMap.containsKey(t)) {
+								topicMap.get(t).increaseAccumulatedMsgSize(messageSize);
+								topicMap.get(t).increaseMsgPublishCount();
 							}
 							if (clientMap.containsKey(clientId)) {
 								clientMap.get(clientId).increaseAccumulatedMsgSize(messageSize);
@@ -398,14 +433,13 @@ public class LogReader implements Runnable {
 							if (!senderList.contains(clientId)) {
 								senderList.add(clientId);
 							}
-						} else if (topic.contains("_delete")) {// _delete 포함 시 토픽이 종료되었다는 의미임으로 토픽이 끝난 시간을 저장하고 토픽 이름 변경
-							String pre = topic.replace("_delete", "");
-							if (topicMap.containsKey(pre)) {
-
-								deleteFromTopicTable(pre); // 사용이 종료된 토픽 삭제
-							}
-						} else if (topic.contains("monitoring")) {
-
+						} else if (topic.contains("_close")) { // 회의방이 종료되었을 경우 토픽 삭제
+							String t = topic.replace("_close", "");
+							
+							topicMap.remove(t);
+							ComponentReceiver.removeComponent(t);
+							
+							deleteFromTopicTable(t);
 						}
 					}
 				}
@@ -426,7 +460,7 @@ public class LogReader implements Runnable {
 		}
 	}
 
-	// 현재 시간 리턴하는 함수
+	/* 현재 시간을 리턴하는 함수 */
 	public String getCurrentTime() {
 		Date d = new Date();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
