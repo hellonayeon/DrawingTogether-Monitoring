@@ -217,13 +217,13 @@ public class LogReader implements Runnable {
 			Class.forName(driver);
 			conn = DriverManager.getConnection(url, user, pw);
 	
-			// performance 테이블의 레코드 개수를 알아내기 위한 쿼리 실행
+			// realtime 테이블의 레코드 개수를 알아내기 위한 쿼리 실행
 			pstmt = conn.prepareStatement("SELECT COUNT(*) AS count FROM realtime");
 	
 			rs = pstmt.executeQuery();
 			rs.next();
 	
-			// 현재 performance 테이블의 레코드 개수가 numberOfRecords 값보다 크면 가장 오래된 레코드 삭제
+			// 현재 realtime 테이블의 레코드 개수가 numberOfRecords 값보다 크면 가장 오래된 레코드 삭제
 			if (rs.getInt("count") >= numberOfRecords) {
 	
 				pstmt = conn.prepareStatement("DELETE FROM realtime ORDER BY date ASC LIMIT 1");
@@ -284,6 +284,7 @@ public class LogReader implements Runnable {
 			conn = DriverManager.getConnection(url, user, pw);
 
 			// 연결 해제 된 클라이언트 정보를 client 테이블에서 삭제
+			// 해당 topic 레코드를 참조하고 있는 client 와 component 레코드도 함께 삭제
 			pstmt = conn.prepareStatement("DELETE FROM topic where topic=?");
 
 			pstmt.setString(1, topic);
@@ -363,14 +364,20 @@ public class LogReader implements Runnable {
 							}
 						}
 
-					} else if (inputStr.contains(MessageType.DISCONNECT)) {// disconnect 시 clientMap에서 삭제
+					} else if (inputStr.contains(MessageType.DISCONNECT)) {// disconnect 시 clientMap에서 삭제 [ 참가자가 회의방에서 나간 경우에 해당 ]
 						words = inputStr.split(" ");
 						clientId = words[4];
 
 						if (clientMap.containsKey(clientId)) {
-							topicMap.get(clientMap.get(clientId).getTopic()).decreaseParticipants();
-							deleteFromClientTable(clientMap.get(clientId).getClientName(), clientMap.get(clientId).getTopic());
-							clientMap.remove(clientId);
+//							if(topicMap.contains(clientMap.get(clientId).getTopic())) { // 참가자가 나간 경우
+								topicMap.get(clientMap.get(clientId).getTopic()).decreaseParticipants();
+								deleteFromClientTable(clientMap.get(clientId).getClientName(), clientMap.get(clientId).getTopic());
+								clientMap.remove(clientId);
+//							}
+//							else { // 마스터가 나간 경우 (MessageType.RECEIVED_PUBLISH 에서 토픽 삭제) 
+//								clientMap.remove(clientId);
+//							} // topic_close 에서 클라이언트 모두 지우기 처리
+							
 						}
 
 					} else if (inputStr.contains(MessageType.SOCKET_ERROR)) {// socket error 발생 시 clientMap에서 삭제
@@ -417,11 +424,17 @@ public class LogReader implements Runnable {
 						clientId = words[4];
 						clientInfo = clientId.substring(1).split("_"); // name, topic, platform
 
-						topic = words[9].replaceAll("\'|,", "");
-						messageSize = Integer.parseInt(words[11].replace("(", ""));
+						topic = words[9].replaceAll("\'|,", ""); // 토픽을 감싸는 따옴표 제거
+						messageSize = Integer.parseInt(words[11].replace("(", "")); // 메시지 사이즈 추출
 
-						if (topic.contains("_data")) {
-							String t = topic.replace("_data", "");
+						if (topic.contains("_data") || topic.contains("_image")) {
+							String t;
+							
+							if (topic.contains("_data"))
+								t = topic.replace("_data", "");
+							else
+								t = topic.replace("_image", "");
+							
 							if (topicMap.containsKey(t)) {
 								topicMap.get(t).increaseAccumulatedMsgSize(messageSize);
 								topicMap.get(t).increaseMsgPublishCount();
@@ -438,6 +451,7 @@ public class LogReader implements Runnable {
 							
 							topicMap.remove(t);
 							ComponentReceiver.removeComponent(t);
+							removeTopicClient(t);
 							
 							deleteFromTopicTable(t);
 						}
@@ -457,6 +471,15 @@ public class LogReader implements Runnable {
 					inputStreamReader.close();
 				} catch (IOException e) {
 				}
+		}
+	}
+	
+	/* 토픽에 해당되는 클라이언트를 모두 지우는 함수 */
+	private void removeTopicClient(String topic) {
+		for ( String clientId : clientMap.keySet() ) {
+			if (clientMap.get(clientId).getTopic().equals(topic)) {
+				clientMap.remove(clientId);
+			}
 		}
 	}
 

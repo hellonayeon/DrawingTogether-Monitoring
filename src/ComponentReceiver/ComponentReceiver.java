@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -53,7 +54,7 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 
 		this.interval = interval;
 		
-		this.ip = "192.168.200.102";
+		this.ip = "192.168.0.103";
 		this.port = "1883";
 
 		this.topic = "monitoring";
@@ -97,6 +98,7 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 		} catch (ClassNotFoundException e1) {
 			System.out.println("driver error");
 		}
+
 
 	}
 
@@ -158,7 +160,7 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 
 	// timer 함수
 	public void startTimer() {
-		System.out.println("MQTTClient component update starts at " + getCurrentTime());
+		System.out.println("ComponentReceiver starts at " + getCurrentTime());
 
 		Timer timer = new Timer();
 		TimerTask task = new TimerTask() {
@@ -167,13 +169,14 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 				updateComponentTable();
 			}
 		};
-		timer.schedule(task, 0, interval * 1000);
+		timer.schedule(task, 0, interval * 3000);
 	}
 
 	/* 컴포넌트 테이블을 업데이트하는 함수 */
 	public void updateComponentTable() {
 		Connection conn = null;
 		PreparedStatement pstmt = null;
+		ResultSet rs = null;
 
 		try {
 			Class.forName(driver);
@@ -232,7 +235,7 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 	}
 
 	public void print() {
-		System.out.println("-----------MQTTClient-----------");
+		System.out.println("---------- Component Receiver -----------");
 	}
 
 }
