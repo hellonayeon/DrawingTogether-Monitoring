@@ -25,9 +25,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import com.google.gson.Gson;
 
 
-public class ComponentReceiver implements MqttCallback, Runnable {
-
-	private int interval;
+public class ComponentReceiver implements MqttCallback {
 	
 	private String ip;
 	private String port;
@@ -43,18 +41,15 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 	private String user;
 	private String pw;
 	
-
-	private double duration;
 	
-	private static ConcurrentHashMap<String, ComponentCount> componentMap = new ConcurrentHashMap<>();
+	/* [key] topic name, [value] ComponentCount */
+	public static ConcurrentHashMap<String, ComponentCount> componentMap = new ConcurrentHashMap<>();
 	
 	private Gson gson = new Gson();
 	
-	public ComponentReceiver(int interval) {
-
-		this.interval = interval;
+	public ComponentReceiver() {
 		
-		this.ip = "192.168.0.103";
+		this.ip = "192.168.0.102";
 		this.port = "1883";
 
 		this.topic = "monitoring";
@@ -79,33 +74,15 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 		} catch (MqttException e) {
 			e.printStackTrace();
 		}
-
-		readProperties();
 		
-		// 모든 DB 테이블 비우기
-		Connection conn = null;
-		PreparedStatement pstmt = null;
-
-		try {
-			Class.forName(driver);
-			conn = DriverManager.getConnection(url, user, pw);
-
-			pstmt = conn.prepareStatement("DELETE FROM component");
-			pstmt.executeUpdate();
-		} catch (SQLException e) {
-			System.out.println("all table delete (mqtt client class) query error");
-			e.printStackTrace();
-		} catch (ClassNotFoundException e1) {
-			System.out.println("driver error");
-		}
-
+		
 
 	}
 
 	@Override
 	public void connectionLost(Throwable cause) {
 		System.out.println(cause.getCause());
-
+		cause.printStackTrace();
 	}
 
 	@Override
@@ -127,50 +104,50 @@ public class ComponentReceiver implements MqttCallback, Runnable {
 	
 	}
 	
-	// db.properties 를 읽어오는 함수
-	public void readProperties() {
-		Properties props = new Properties();
-		InputStream is = null;
-		try {
-			is = new FileInputStream("db.properties");
+//	// db.properties 를 읽어오는 함수
+//	public void readProperties() {
+//		Properties props = new Properties();
+//		InputStream is = null;
+//		try {
+//			is = new FileInputStream("db.properties");
+//
+//			props.load(is);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//			return;
+//		} finally {
+//			if (is != null)
+//				try {
+//					is.close();
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+//		}
+//
+//		driver = props.getProperty("jdbc.driver");
+//		url = props.getProperty("jdbc.url");
+//		user = props.getProperty("jdbc.username");
+//		pw = props.getProperty("jdbc.password");
+//	}
+//
+//	@Override
+//	public void run() {
+//		startTimer();
+//	}
 
-			props.load(is);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		} finally {
-			if (is != null)
-				try {
-					is.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		}
-
-		driver = props.getProperty("jdbc.driver");
-		url = props.getProperty("jdbc.url");
-		user = props.getProperty("jdbc.username");
-		pw = props.getProperty("jdbc.password");
-	}
-
-	@Override
-	public void run() {
-		startTimer();
-	}
-
-	// timer 함수
-	public void startTimer() {
-		System.out.println("ComponentReceiver starts at " + getCurrentTime());
-
-		Timer timer = new Timer();
-		TimerTask task = new TimerTask() {
-			@Override
-			public void run() {
-				updateComponentTable();
-			}
-		};
-		timer.schedule(task, 0, interval * 3000);
-	}
+//	// timer 함수
+//	public void startTimer() {
+//		System.out.println("ComponentReceiver starts at " + getCurrentTime());
+//
+//		Timer timer = new Timer();
+//		TimerTask task = new TimerTask() {
+//			@Override
+//			public void run() {
+//				updateComponentTable();
+//			}
+//		};
+//		timer.schedule(task, 0, interval * 3000);
+//	}
 
 	/* 컴포넌트 테이블을 업데이트하는 함수 */
 	public void updateComponentTable() {

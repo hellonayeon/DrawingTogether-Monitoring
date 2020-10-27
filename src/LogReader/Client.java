@@ -12,8 +12,6 @@ public class Client {
       this.name = name;
       this.topic = topic;
       this.platform = platform;
-      
-      this.msgPublishCount = 1;
    }
    
    public void clearMsgData() {

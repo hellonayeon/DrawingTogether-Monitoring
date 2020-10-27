@@ -57,9 +57,7 @@ public class Main {
       System.out.println("Starting...");
       System.out.println("interval : " + interval);
 
-      ComponentReceiver mqttClient = new ComponentReceiver(interval);
-      Thread t = new Thread(mqttClient);
-      t.start();
+      ComponentReceiver componentReceiver = new ComponentReceiver(); // MQTT 
 
       LogReader logReader = new LogReader(interval, 100);
       Thread t2 = new Thread(logReader);

@@ -9,6 +9,7 @@ public class ComponentCount {
     int oval; // 원 개수 
     int text; // 텍스트 
     int image; // 이미지 전송 횟수
+    int erase; // 지우개 전송 횟수
     
     
 	public String getTopic() {
@@ -34,4 +35,13 @@ public class ComponentCount {
 	public int getImage() {
 		return image;
 	}
+	
+	public int getErase() {
+		return erase;
+	}
+	
+	public void changeTopicName(String finishTopic) {
+		this.topic = finishTopic;
+	}
+	
 }
