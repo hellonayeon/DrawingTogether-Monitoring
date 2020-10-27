@@ -5,7 +5,8 @@ This application is Copyright 2020 The Project DrawingTogether Authors. All righ
 The following sets forth attribution notices for third party software that may be contained in this application.
 
 <br/>
----
+
+----------
 
 **paho**
 
@@ -34,7 +35,8 @@ Copyright 2008-2011 Google Inc.
 Apache License 2.0
 
 <br/>
----
+
+----------
 
 ### Eclipse Public License - v 2.0 ###
 
