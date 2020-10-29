@@ -1,18 +1,5 @@
 package ComponentReceiver;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -36,12 +23,6 @@ public class ComponentReceiver implements MqttCallback {
 	private MqttClient client;
 	private String clientId;
 
-	private String driver;
-	private String url;
-	private String user;
-	private String pw;
-	
-	
 	/* [key] topic name, [value] ComponentCount */
 	public static ConcurrentHashMap<String, ComponentCount> componentMap = new ConcurrentHashMap<>();
 	
@@ -49,7 +30,7 @@ public class ComponentReceiver implements MqttCallback {
 	
 	public ComponentReceiver() {
 		
-		this.ip = "192.168.0.102";
+		this.ip = "192.168.0.36";
 		this.port = "1883";
 
 		this.topic = "monitoring";
@@ -103,116 +84,10 @@ public class ComponentReceiver implements MqttCallback {
 			componentMap.put(componentCount.getTopic(), componentCount);
 	
 	}
-	
-//	// db.properties 를 읽어오는 함수
-//	public void readProperties() {
-//		Properties props = new Properties();
-//		InputStream is = null;
-//		try {
-//			is = new FileInputStream("db.properties");
-//
-//			props.load(is);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//			return;
-//		} finally {
-//			if (is != null)
-//				try {
-//					is.close();
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
-//		}
-//
-//		driver = props.getProperty("jdbc.driver");
-//		url = props.getProperty("jdbc.url");
-//		user = props.getProperty("jdbc.username");
-//		pw = props.getProperty("jdbc.password");
-//	}
-//
-//	@Override
-//	public void run() {
-//		startTimer();
-//	}
-
-//	// timer 함수
-//	public void startTimer() {
-//		System.out.println("ComponentReceiver starts at " + getCurrentTime());
-//
-//		Timer timer = new Timer();
-//		TimerTask task = new TimerTask() {
-//			@Override
-//			public void run() {
-//				updateComponentTable();
-//			}
-//		};
-//		timer.schedule(task, 0, interval * 3000);
-//	}
-
-	/* 컴포넌트 테이블을 업데이트하는 함수 */
-	public void updateComponentTable() {
-		Connection conn = null;
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
-
-		try {
-			Class.forName(driver);
-			conn = DriverManager.getConnection(url, user, pw);
-
-			pstmt = conn.prepareStatement(
-					"INSERT INTO component(stroke, rect, oval, text, image, topic) VALUES(?, ?, ?, ?, ?, ?)"
-							+ " ON DUPLICATE KEY UPDATE" + " stroke=VALUES(stroke)," + " rect=VALUES(rect),"
-							+ " oval=VALUES(oval)," + " text=VALUES(text)," + " image=VALUES(image),"
-							+ " topic=VALUES(topic)");
-
-			for (ComponentCount cc : componentMap.values()) {
-
-				pstmt.setInt(1, cc.getStroke());
-				pstmt.setInt(2, cc.getRect());
-				pstmt.setInt(3, cc.getOval());
-				pstmt.setInt(4, cc.getText());
-				pstmt.setInt(5, cc.getImage());
-				pstmt.setNString(6, cc.getTopic());
-
-				pstmt.executeUpdate();
-
-			}
-		} catch (SQLException e) {
-			System.out.println("sql update component query error");
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			System.out.println("driver error");
-			e.printStackTrace();
-		} finally {
-			if (pstmt != null)
-				try {
-					pstmt.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			if (conn != null)
-				try {
-					conn.close();
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-		}
-	}
 
 	public static void removeComponent(String topic) {
 		componentMap.remove(topic);
 	}
 
-	// 현재 시간 리턴하는 함수
-	public String getCurrentTime() {
-		Date d = new Date();
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-		return sdf.format(d);
-	}
-
-	public void print() {
-		System.out.println("---------- Component Receiver -----------");
-	}
 
 }

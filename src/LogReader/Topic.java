@@ -1,6 +1,7 @@
 package LogReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 /*토픽과 관련된 정보를 저장하는 클래스*/ 
 public class Topic {
@@ -19,6 +20,7 @@ public class Topic {
       msgPublishCount = 0;
       accumulatedMsgSize = 0;
       
+      sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
       setStartDate();
    }
    
@@ -66,10 +68,7 @@ public class Topic {
    }
 
    public void setStartDate() {
-      Date d = new Date();
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-      this.startDate = sdf.format(d);
+      this.startDate = sdf.format(new Date());
    }
    
    public String changeTopicName() {
