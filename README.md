@@ -125,7 +125,7 @@ MQTT 브로커가 출력하는 로그내용을 읽어, 전체 참여자 및 각�
   
 #### realtime 테이블
 
-| date(문자열) | number\_of\_ connections (개수) | accumulated\_msg\_size (크기) | msg\_publish\_count (개수) | number\_of\_senders (개수) |
+| date | number\_of\_ connections | accumulated\_msg\_size | msg\_publish\_count | number\_of\_senders |
 |---|---|---|---|---|
 | 2020-08-31 15:08:11 | 5 | 2632 | 23 | 3 |
 | 2020-08-31 15:08:14 | 5 | 574 | 12 | 2 |
@@ -133,7 +133,7 @@ MQTT 브로커가 출력하는 로그내용을 읽어, 전체 참여자 및 각�
 
 #### topic 테이블
 
-| topic (문자열) | accumulated\_msg\_size  (크기) | start\_date  (문자열) | participants  (개수) |
+| topic | accumulated\_msg\_size | start\_date | participants |
 |---|---|---|---|
 | meeting1 | 2408 | 2020-08-31 15:01:25 | 2 |
 | meeting2 | 574 | 2020-08-31 15:06:59 | 2 |
@@ -142,7 +142,7 @@ MQTT 브로커가 출력하는 로그내용을 읽어, 전체 참여자 및 각�
 
 #### client 테이블
 
-| topic (문자열) | accumulated\_msg\_size  (크기) | start\_date  (문자열) | participants  (개수) |
+| topic | accumulated\_msg\_size | start\_date | participants |
 |---|---|---|---|
 | meeting1 | 2408 | 2020-08-31 15:01:25 | 2 |
 | meeting2 | 574 | 2020-08-31 15:06:59 | 2 |
@@ -151,7 +151,7 @@ MQTT 브로커가 출력하는 로그내용을 읽어, 전체 참여자 및 각�
 
 #### component 테이블
 
-| topic (문자열) | stroke  (개수) | rect  (개수) | oval  (개수) | text  (개수) | image  (개수) | erase  (개수) |
+| topic | stroke | rect | oval | text | image | erase |
 |---|---|---|---|---|---|---|
 | meeting1 | 34 | 12 | 6 | 10 | 2 | 23 |
 | meeting2 | 52 | 9 | 13 | 6 | 1 | 40 |
